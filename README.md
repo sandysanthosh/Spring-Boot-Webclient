@@ -41,3 +41,63 @@ public class CommunicationService {
 ```
 
 
+#### JUnit test case for the CommunicationService class::
+
+
+```
+import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import reactor.core.publisher.Mono;
+
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class CommunicationServiceTest {
+
+    @Autowired
+    private CommunicationService communicationService;
+
+    @MockBean
+    private WebTestClient webTestClient;
+
+    @Test
+    public void testGetDataFromOtherService() {
+        when(webTestClient.get().uri("/getData")
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange())
+                .thenReturn(WebTestClient.ResponseSpec
+                        .create(HttpStatus.OK)
+                        .body(Mono.just("Hello from other service"), String.class));
+
+        Mono<String> result = communicationService.getDataFromOtherService();
+        assertEquals("Hello from other service", result.block());
+    }
+
+    @Test
+    public void testPostDataToOtherService() {
+        when(webTestClient.post().uri("/postData")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("Hello from this service")
+                .exchange())
+                .thenReturn(WebTestClient.ResponseSpec
+                        .create(HttpStatus.OK)
+                        .body(Mono.just("Data received"), String.class));
+
+        Mono<String> result = communicationService.postDataToOtherService("Hello from this service");
+        assertEquals("Data received", result.block());
+    }
+}
+
+
+
+```
+
